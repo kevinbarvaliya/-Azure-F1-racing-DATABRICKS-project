@@ -4,6 +4,24 @@
 
 # COMMAND ----------
 
+# MAGIC %run "../includes/configuration"
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/common_functions"
+
+# COMMAND ----------
+
+dbutils.widgets.text("p_data_source", "")
+v_data_source = dbutils.widgets.get("p_data_source")
+
+# COMMAND ----------
+
+dbutils.widgets.text("p_file_date", "2021-03-21")
+v_file_date = dbutils.widgets.get("p_file_date")
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ####Step 1 - Read the JSON file using the spark data frame reader API
 
@@ -33,7 +51,7 @@ drivers_schema = StructType(fields = [StructField("driverId",IntegerType(),False
 drivers_df = spark.read \
 .option("header",True) \
 .schema(drivers_schema) \
-.json("/mnt/formula1dalalake1/raw/drivers.json")
+.json(f"{raw_folder_path}/{v_file_date}/drivers.json")
 
 # COMMAND ----------
 
@@ -42,7 +60,7 @@ drivers_df = spark.read \
 
 # COMMAND ----------
 
-from pyspark.sql.functions import current_timestamp, concat, col, lit
+from pyspark.sql.functions import concat, col, lit
 
 
 # COMMAND ----------
@@ -50,7 +68,9 @@ from pyspark.sql.functions import current_timestamp, concat, col, lit
 drivers_updated_columns_df = drivers_df.withColumnRenamed("driverId", "driver_id") \
 .withColumnRenamed("driverRef", "driver_ref") \
 .withColumn("ingestion_date", current_timestamp()) \
-.withColumn("name",concat(col("name.forename"), lit(" "), col("name.surname")))
+.withColumn("name",concat(col("name.forename"), lit(" "), col("name.surname"))) \
+.withColumn("data_source", lit(v_data_source))\
+.withColumn("file date", lit(v_file_date))
 
 # COMMAND ----------
 
@@ -63,9 +83,31 @@ drivers_final_df =  drivers_updated_columns_df.drop("url")
 
 # COMMAND ----------
 
+spark.conf.set("spark.databricks.delta.defaults.columnMapping.mode", "name")
+
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ####Step 4 - Wtrite data to datalake as parquet
 
 # COMMAND ----------
 
-drivers_final_df.write.mode("overwrite").parquet("/mnt/formula1dalalake1/processed/drivers")
+drivers_final_df.write.mode("overwrite").format("delta").option("delta.columnMapping.mode", "name").saveAsTable("f1_processed.drivers")
+
+# COMMAND ----------
+
+# %sql drop table f1_processed.drivers;
+
+# COMMAND ----------
+
+dbutils.notebook.exit("Success")
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC SELECT * from f1_processed.drivers
+
+# COMMAND ----------
+
+

@@ -28,7 +28,19 @@ def mount_adl(container_name):
 # COMMAND ----------
 
 mount_adl("raw")
+
+
+# COMMAND ----------
+
 mount_adl("processed")
+
+# COMMAND ----------
+
+mount_adl("presentation")
+
+# COMMAND ----------
+
+mount_adl("demo")
 
 # COMMAND ----------
 
@@ -37,6 +49,14 @@ dbutils.fs.ls("/mnt/formula1dalalake1/raw")
 # COMMAND ----------
 
 dbutils.fs.ls("/mnt/formula1dalalake1/processed")
+
+# COMMAND ----------
+
+dbutils.fs.ls("/mnt/formula1dalalake1/presentation")
+
+# COMMAND ----------
+
+dbutils.fs.ls("/mnt/formula1dalalake1/demo")
 
 # COMMAND ----------
 

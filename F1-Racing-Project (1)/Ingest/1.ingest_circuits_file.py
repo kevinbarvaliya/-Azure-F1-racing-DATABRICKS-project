@@ -4,6 +4,24 @@
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_data_source", "")
+v_data_source = dbutils.widgets.get("p_data_source")
+
+# COMMAND ----------
+
+dbutils.widgets.text("p_file_date", "2021-03-21")
+v_file_date = dbutils.widgets.get("p_file_date")
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/configuration"
+
+# COMMAND ----------
+
+# MAGIC %run "../includes/common_functions"
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ####Step 1 - Read the CSV using the spark data frame reader
 
@@ -25,7 +43,10 @@ circuits_sceama = StructType(fields=[StructField("circuitId",IntegerType(), Fals
 
 # COMMAND ----------
 
- circuits_df =spark.read.option("header",True).schema(circuits_sceama).csv("/mnt/formula1dalalake1/raw/circuits.csv")
+ circuits_df =spark.read\
+    .option("header",True)\
+    .schema(circuits_sceama)\
+    .csv(f"{raw_folder_path}/{v_file_date}/circuits.csv")
 
 # COMMAND ----------
 
@@ -38,15 +59,11 @@ type(circuits_df)
 
 # COMMAND ----------
 
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, lit
 
 # COMMAND ----------
 
 circuits_selected_df = circuits_df.select(col("circuitId"),col("circuitRef"),col("name"),col("location"),col("country"),col("lat"),col("lng"),col("alt"))
-
-# COMMAND ----------
-
-display(circuits_selected_df)
 
 # COMMAND ----------
 
@@ -59,11 +76,9 @@ circuits_renamed_df = circuits_selected_df.withColumnRenamed("circuitId", "circu
 .withColumnRenamed("circuitRef", "circuit_ref" ) \
 .withColumnRenamed("lat", "latitude") \
 .withColumnRenamed("lng", "longitude") \
-.withColumnRenamed("alt", "altitude") 
-
-# COMMAND ----------
-
-display(circuits_renamed_df)
+.withColumnRenamed("alt", "altitude") \
+.withColumn("data_source", lit(v_data_source)) \
+.withColumn("file_date", lit(v_file_date))
 
 # COMMAND ----------
 
@@ -72,11 +87,8 @@ display(circuits_renamed_df)
 
 # COMMAND ----------
 
- from pyspark.sql.functions import current_timestamp
+circuits_final_df = add_ingestion_date(circuits_renamed_df)
 
-# COMMAND ----------
-
-circuits_final_df = circuits_renamed_df.withColumn("ingestion_date", current_timestamp())
 
 # COMMAND ----------
 
@@ -85,7 +97,15 @@ circuits_final_df = circuits_renamed_df.withColumn("ingestion_date", current_tim
 
 # COMMAND ----------
 
-circuits_final_df.write.mode("overwrite").parquet("/mnt/formula1dalalake1/processed/circuits")
+circuits_final_df.write.mode("overwrite").format("delta").saveAsTable("f1_processed.circuits")
+
+# COMMAND ----------
+
+
+
+# COMMAND ----------
+
+dbutils.notebook.exit("Success")
 
 # COMMAND ----------
 
