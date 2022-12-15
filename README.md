@@ -65,6 +65,3 @@ Step-5: Schedule and execute Databricks Notebook with Aure Data Factory.
 
 
 
-Thank You!
-------------
-
