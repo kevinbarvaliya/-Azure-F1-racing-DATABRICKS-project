@@ -61,7 +61,7 @@ Step-5: Schedule and execute Databricks Notebook with Aure Data Factory.
 ------------------------------------------------------------------------------------------------------------------------------------
  * Develop parameterized Pipelines.
  * Schedule tumbling window trigger for specify time for execute Pipeline.
- * Handle Pipeline Failure with other data factory activity i.e. getMetaData, if..else.
+ * Handle Pipeline Failure with other data factory activity i.e. getMetaData, if...else.
 
 
 
